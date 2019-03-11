@@ -17,7 +17,7 @@ plt.figure()
 plt.plot(list(range(10)))
 
 
-def main(lr=0.001):
+def main(lr=0.001, episodeMemory = 100, replaySize=64,gamma=0.95):
     np.random.seed(0)
     env = gym.make('MountainCar-v0')
     model = keras.Sequential()
@@ -27,11 +27,12 @@ def main(lr=0.001):
     adam = keras.optimizers.Adam(lr=lr)
     model.compile(loss='mean_squared_error', optimizer=adam)
 
-    gamma = 0.95
-    memorySize = 200*100
-    dqn = DQN(model, gamma, memorySize,replaysize=64,_env = env)
+    #gamma = 0.95
+    memorySize = 200*episodeMemory
+    dqn = DQN(model, gamma, memorySize,replaysize=replaySize,_env = env)
     dqnScore = dqnScorerMountainCar(dqn,_env=env)
-    nrofEpisodes = 1000
+    nrofEpisodes = 1001
+    #nrofEpisodes = 20
 
     res = np.zeros(shape=(nrofEpisodes, 2))
 
@@ -51,25 +52,32 @@ def main(lr=0.001):
             iter += 1
             action = dqn.action(obs)
             new_obs, reward, done, info = env.step(action)
+            if(done and (iter<199)):
+                reward = (200 - iter)/10
+                print("****Success*****", -iter)
+
             dqn.add(action,obs,new_obs,reward)
             obs = new_obs
-            if(done and (iter<199)):
-                print("****Success*****")
+
             #if(episode % 100) == 10:
-            #    env.render()
+            #    env.render()j
         dqn.replay()
         env.reset()
-        dqnScore.updateResult()
+        dqnScore.updateResult(iter)
         #res[episode,:] = [np.min(x[:,0]),np.max(x[:,0])]
-
-    dqnScore.plotResults()
-    dqnScore.plot_cost_to_go_mountain_car()
-    plt.show()
-
+    title = "eps_%d_mem_%d_rep_%d_gamma_%d" % (nrofEpisodes,episodeMemory,replaySize,gamma*100)
+    dqnScore.plotResults(title)
+    dqnScore.plot_cost_to_go_mountain_car(title)
+    #plt.show()
 
 #lr =[0.1,0.01,0.001,0.0001]
 
-main(lr=0.004)
+#main(lr=0.005,episodeMemory=5,replaySize=64,gamma=0.95)
+#main(lr=0.004,episodeMemory=500,replaySize=64,gamma=0.95)
 
+main(lr=0.004,episodeMemory=100,replaySize=128,gamma=0.95)
+#main(lr=0.004,episodeMemory=100,replaySize=128,gamma=0.95)
 
+#main(lr=0.004,episodeMemory=100,replaySize=64,gamma=0.9)
+#main(lr=0.004,episodeMemory=100,replaySize=64,gamma=0.99)
 
